@@ -19,4 +19,23 @@ spotify_api = spotipy.Spotify(
 )
 
 def get_playlist_info(playlist_url):
-    return spotify_api.album_tracks(playlist_url)
+    playlist_info = spotify_api.playlist_tracks(playlist_url)
+    return filter_playlist_tracks(playlist_info)
+
+def filter_playlist_tracks(playlist_info):
+    items = playlist_info["items"]
+    tracks_filtered = []
+
+    for item in items:
+        track = item["track"]
+        tracks_filtered.append(
+            {
+                "uri": track["uri"],
+                "name": track["name"],
+                "duration": track["duration_ms"],
+                "explicit": track["explicit"],
+                "artist": track["artists"][0]["name"]
+            }
+        )
+
+    return tracks_filtered
