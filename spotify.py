@@ -5,7 +5,6 @@ from spotipy.oauth2 import SpotifyClientCredentials
 
 load_dotenv()
 
-API = "https://api.spotify.com"
 CID = os.getenv("SPOTIFY_CID")
 SECRET = os.getenv("SPOTIFY_SECRET")
 
@@ -34,7 +33,7 @@ def filter_playlist_tracks(playlist_info):
             {
                 "uri": track["uri"],
                 "name": track["name"],
-                "duration": track["duration_ms"],
+                "duration_ms": track["duration_ms"],
                 "explicit": track["explicit"],
                 "artist": track["artists"][0]["name"]
             }
