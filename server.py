@@ -13,6 +13,3 @@ async def playlist_info(request):
     playlist_info = get_playlist_info(playlist_url)
     playlist_info = increment_with_tsne_data(playlist_info)
     return json(playlist_info)
-
-if __name__ == "__main__":
-    app.run()
