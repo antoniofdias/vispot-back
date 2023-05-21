@@ -1,9 +1,6 @@
 import os
 import spotipy
-from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyClientCredentials
-
-load_dotenv()
 
 CID = os.getenv("SPOTIFY_CID")
 SECRET = os.getenv("SPOTIFY_SECRET")
