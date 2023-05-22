@@ -1,14 +1,15 @@
 from sanic import Sanic
 from sanic.response import json
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from spotify import get_playlist_info
 from tsne import increment_with_tsne_data
 from lyrics import request_lyrics_per_track
-from dotenv import load_dotenv
 from tfidf import calculate_correlation_matrix
 
 app = Sanic("tcc_api")
-
-load_dotenv()
 
 @app.get("/playlist")
 async def playlist_info(request):
