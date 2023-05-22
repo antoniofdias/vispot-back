@@ -1,4 +1,5 @@
 import requests
+import os
 
 VAGALUME_KEY = os.getenv("VAGALUME_KEY")
 

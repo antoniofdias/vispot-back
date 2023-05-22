@@ -4,6 +4,7 @@ from spotify import get_playlist_info
 from tsne import increment_with_tsne_data
 from lyrics import request_lyrics_per_track
 from dotenv import load_dotenv
+from tfidf import calculate_correlation_matrix
 
 app = Sanic("tcc_api")
 
@@ -30,5 +31,6 @@ def get_tracks_info(request):
 
 def get_correlation_matrix(tracks_info):
     lyrics = request_lyrics_per_track(tracks_info)
+    correlation_matrix = calculate_correlation_matrix(lyrics)
 
-    return [[]]
+    return correlation_matrix
