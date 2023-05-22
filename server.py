@@ -1,5 +1,6 @@
 from sanic import Sanic
 from sanic.response import json
+from sanic_ext import Extend
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,6 +11,8 @@ from lyrics import request_lyrics_per_track
 from tfidf import calculate_correlation_matrix
 
 app = Sanic("tcc_api")
+app.config.CORS_ORIGINS = "*"
+Extend(app)
 
 @app.get("/playlist")
 async def playlist_info(request):
