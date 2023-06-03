@@ -38,3 +38,6 @@ def get_correlation_matrix(tracks_info):
   correlation_matrix = calculate_correlation_matrix(lyrics)
 
   return correlation_matrix
+
+if __name__ == '__main__':
+  app.run(host='0.0.0.0', port=1337, workers=4)
