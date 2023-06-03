@@ -24,16 +24,17 @@ def filter_playlist_tracks(playlist_info):
   items = playlist_info["items"]
   tracks_filtered = []
 
-  for item in items:
+  for item_index, item in enumerate(items):
     track = item["track"]
     tracks_filtered.append(
-        {
+      {
+        "id": item_index + 1,
         "uri": track["uri"],
         "name": track["name"],
         "duration_ms": track["duration_ms"],
         "explicit": track["explicit"],
         "artist": track["artists"][0]["name"]
-        }
+      }
     )
 
   return tracks_filtered
@@ -47,8 +48,8 @@ def retrieve_tracks_details(tracks_filtered):
   for track_index, track_features in enumerate(tracks_features):
     track_initial_data = tracks_filtered[track_index]
     track_detailed = retrieve_track_details(
-        track_initial_data, 
-        track_features
+      track_initial_data, 
+      track_features
     )
     tracks_detailed.append(track_detailed)
 
