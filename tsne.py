@@ -7,6 +7,8 @@ COLUMNS_TO_SELECT = ["duration_ms", "danceability", "energy", "loudness",
                      "speechiness", "acousticness", "instrumentalness", 
                      "liveness", "valence", "tempo"]
 
+PALETTE_ARRAY = ['viridis', 'inferno', 'winter']
+
 tsne = TSNE(n_components=2, random_state=0)
 
 def increment_with_tsne_data(playlist_info):
@@ -23,20 +25,22 @@ def increment_with_tsne_data(playlist_info):
     track_info["y"] = float(data[1])
 
     colors = {}
-    for column in COLUMNS_TO_SELECT:
-      min_val = playlist_dataframe[column].min()
-      max_val = playlist_dataframe[column].max()
-      normalized_value = (playlist_dataframe.at[index, column] - min_val) / (max_val - min_val)
-      colors[column] = map_to_color(normalized_value)
+    for palette in PALETTE_ARRAY:
+      colors[palette] = {} 
+      for column in COLUMNS_TO_SELECT:
+        min_val = playlist_dataframe[column].min()
+        max_val = playlist_dataframe[column].max()
+        normalized_value = (playlist_dataframe.at[index, column] - min_val) / (max_val - min_val)
+        colors[palette][column] = map_to_color(normalized_value, palette)
     track_info["colors"] = colors
 
     incremented_playlist_info.append(track_info)
 
   return incremented_playlist_info
 
-def map_to_color(value):
+def map_to_color(value, palette):
   norm = colors.Normalize(vmin=0, vmax=1)
-  cmap = plt.cm.viridis
+  cmap = plt.get_cmap(palette)
   color = cmap(norm(value))
   hex_code = colors.rgb2hex(color)
 
