@@ -7,7 +7,7 @@ COLUMNS_TO_SELECT = ["duration_ms", "danceability", "energy", "loudness",
                      "speechiness", "acousticness", "instrumentalness", 
                      "liveness", "valence", "tempo"]
 
-PALETTE_ARRAY = ['viridis', 'cividis', 'jet']
+PALETTE_ARRAY = ['viridis', 'cividis', 'jet', 'hot']
 
 tsne = TSNE(n_components=2, random_state=0)
 
