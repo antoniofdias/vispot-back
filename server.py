@@ -17,7 +17,7 @@ Extend(app)
 @app.get("/playlist")
 async def playlist_info(request):
   playlist_urls = request.args.get("playlist_url")
-  playlist_url_array = playlist_urls.split(" ")
+  playlist_url_array = playlist_urls.split("+")
 
   tracks_info = []
   for playlist_url in playlist_url_array:
