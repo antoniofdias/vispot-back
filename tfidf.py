@@ -1,4 +1,3 @@
-import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer, strip_accents_unicode, ENGLISH_STOP_WORDS
 from sklearn.metrics.pairwise import cosine_similarity
 

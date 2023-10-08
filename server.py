@@ -16,16 +16,20 @@ Extend(app)
 
 @app.get("/playlist")
 async def playlist_info(request):
-  tracks_info = get_tracks_info(request)
+  playlist_urls = request.args.get("playlist_url")
+  playlist_url_array = playlist_urls.split(" ")
+
+  tracks_info = []
+  for playlist_url in playlist_url_array:
+    tracks_info += get_tracks_info(playlist_url)
   correlation_matrix = get_correlation_matrix(tracks_info)
+  
   return json({
     "songs": tracks_info,
     "correlation": correlation_matrix
   })
 
-def get_tracks_info(request):
-  playlist_url = request.args.get("playlist_url")
-
+def get_tracks_info(playlist_url):
   if playlist_url is None:
     return json({})
 
