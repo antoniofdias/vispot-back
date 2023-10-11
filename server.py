@@ -20,8 +20,10 @@ async def playlist_info(request):
   playlist_url_array = playlist_urls.split("+")
 
   tracks_info = []
+  current_index = 0
   for playlist_url in playlist_url_array:
-    tracks_info += get_tracks_info(playlist_url)
+    tracks_info += get_tracks_info(playlist_url, current_index)
+    current_index = len(tracks_info)
   tracks_info = increment_with_tsne_data(tracks_info)
   correlation_matrix = get_correlation_matrix(tracks_info)
   
@@ -30,11 +32,11 @@ async def playlist_info(request):
     "correlation": correlation_matrix
   })
 
-def get_tracks_info(playlist_url):
+def get_tracks_info(playlist_url, current_index):
   if playlist_url is None:
     return json({})
 
-  tracks_info = get_playlist_info(playlist_url)
+  tracks_info = get_playlist_info(playlist_url, current_index)
   return tracks_info
 
 def get_correlation_matrix(tracks_info):
