@@ -22,6 +22,7 @@ async def playlist_info(request):
   tracks_info = []
   for playlist_url in playlist_url_array:
     tracks_info += get_tracks_info(playlist_url)
+  tracks_info = increment_with_tsne_data(tracks_info)
   correlation_matrix = get_correlation_matrix(tracks_info)
   
   return json({
@@ -34,7 +35,6 @@ def get_tracks_info(playlist_url):
     return json({})
 
   tracks_info = get_playlist_info(playlist_url)
-  tracks_info = increment_with_tsne_data(tracks_info)
   return tracks_info
 
 def get_correlation_matrix(tracks_info):
