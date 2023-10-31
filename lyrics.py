@@ -2,7 +2,7 @@ import requests
 import os
 import concurrent.futures
 
-VAGALUME_KEY = os.getenv("VAGALUME_KEY")
+MUSIXMATCH_KEY = os.getenv("MUSIXMATCH_KEY")
 
 def request_lyrics_per_track(tracks):
   lyrics = []
@@ -23,13 +23,13 @@ def request_lyrics_per_track(tracks):
 
 def retrieve_from_api(track):
   artist = track["artist"]
-  song = track["name"]
-  url = f"https://api.vagalume.com.br/search.php?art={artist}&mus={song}&apikey={VAGALUME_KEY}"
+  track_name = track["name"]
+  url = f"https://api.musixmatch.com/ws/1.1/matcher.lyrics.get?apikey={MUSIXMATCH_KEY}&q_track={track_name}&q_artist={artist}"
   payload = {}
 
-  response = requests.post(url, data=payload)
+  response = requests.get(url, data=payload)
   try:
-    lyric = response.json()["mus"][0]["text"].replace("\n", " ").lower()
+    lyric = response.json()["message"]["body"]["lyrics"]["lyrics_body"].replace("\n", " ").replace("******* This Lyrics is NOT for Commercial use *******", "").lower()
   except:
     lyric = ""
 
