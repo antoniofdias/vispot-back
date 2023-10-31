@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from spotify import get_playlist_info
+from spotify import get_playlist_name, get_playlist_info
 from tsne import increment_with_tsne_data
 from lyrics import request_lyrics_per_track
 from tfidf import calculate_correlation_matrix
@@ -13,6 +13,15 @@ from tfidf import calculate_correlation_matrix
 app = Sanic("tcc_api")
 app.config.CORS_ORIGINS = "*"
 Extend(app)
+
+@app.get("/playlist_name")
+async def playlist_name(request):
+  playlist_url = request.args.get("playlist_url")
+  playlist_name = get_playlist_name(playlist_url)
+  
+  return json({
+    "name": playlist_name,
+  })
 
 @app.get("/playlist")
 async def playlist_info(request):

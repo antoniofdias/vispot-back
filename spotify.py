@@ -14,6 +14,10 @@ spotify_api = spotipy.Spotify(
   client_credentials_manager = client_credentials_manager
 )
 
+def get_playlist_name(playlist_url):
+  playlist_info = spotify_api.playlist(playlist_url)
+  return playlist_info["name"]
+
 def get_playlist_info(playlist_url, current_index):
   playlist_info = spotify_api.playlist(playlist_url)
   tracks_filtered = filter_playlist_tracks(playlist_info["tracks"], playlist_info["name"], current_index)
