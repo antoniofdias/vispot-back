@@ -13,6 +13,8 @@ tsne = TSNE(n_components=2, random_state=0)
 
 def increment_with_tsne_data(playlist_info):
   incremented_playlist_info = []
+  color_array = ['#4CAF50', '#75485E', '#CB904D', '#255F85', '#FFCAE9']
+  playlist_colors = {}
 
   playlist_dataframe = pandas.DataFrame.from_records(playlist_info)
   playlist_dataframe = playlist_dataframe[COLUMNS_TO_SELECT]
@@ -24,6 +26,10 @@ def increment_with_tsne_data(playlist_info):
     track_info["x"] = float(data[0])
     track_info["y"] = float(data[1])
 
+    if track_info["playlist"] not in playlist_colors:
+      playlist_colors[track_info["playlist"]] = color_array[0]
+      color_array.pop(0)
+
     colors = {}
     for palette in PALETTE_ARRAY:
       colors[palette] = {} 
@@ -32,6 +38,7 @@ def increment_with_tsne_data(playlist_info):
         max_val = playlist_dataframe[column].max()
         normalized_value = (playlist_dataframe.at[index, column] - min_val) / (max_val - min_val)
         colors[palette][column] = map_to_color(normalized_value, palette)
+      colors[palette]["playlist"] = playlist_colors[track_info["playlist"]]
     track_info["colors"] = colors
 
     incremented_playlist_info.append(track_info)
