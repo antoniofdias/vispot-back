@@ -1,4 +1,5 @@
 import pandas
+from sklearn.preprocessing import StandardScaler
 from sklearn.manifold import TSNE
 from matplotlib import colors
 import matplotlib.pyplot as plt
@@ -19,7 +20,12 @@ def increment_with_tsne_data(playlist_info):
   playlist_dataframe = pandas.DataFrame.from_records(playlist_info)
   playlist_dataframe = playlist_dataframe[COLUMNS_TO_SELECT]
 
-  tsne_data = tsne.fit_transform(playlist_dataframe)
+  scaler = StandardScaler()
+
+  standardized_data = scaler.fit_transform(playlist_dataframe)
+  standardized_dataframe = pandas.DataFrame(standardized_data, columns=playlist_dataframe.columns)
+
+  tsne_data = tsne.fit_transform(standardized_dataframe)
 
   for index, data in enumerate(tsne_data):
     track_info = playlist_info[index]
