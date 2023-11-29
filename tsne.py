@@ -8,7 +8,7 @@ COLUMNS_TO_SELECT = ["duration_ms", "danceability", "energy", "loudness",
                      "speechiness", "acousticness", "instrumentalness", 
                      "liveness", "valence", "tempo"]
 
-PALETTE_ARRAY = ['viridis', 'cividis', 'jet', 'hot']
+PALETTE_ARRAY = ['viridis', 'cividis', 'jet', 'hot', 'Oranges']
 
 tsne = TSNE(n_components=2, random_state=0)
 
@@ -38,13 +38,14 @@ def increment_with_tsne_data(playlist_info):
 
     colors = {}
     for palette in PALETTE_ARRAY:
-      colors[palette] = {} 
+      lowercase_palette = palette.lower()
+      colors[lowercase_palette] = {} 
       for column in COLUMNS_TO_SELECT:
         min_val = playlist_dataframe[column].min()
         max_val = playlist_dataframe[column].max()
         normalized_value = (playlist_dataframe.at[index, column] - min_val) / (max_val - min_val)
-        colors[palette][column] = map_to_color(normalized_value, palette)
-      colors[palette]["playlist"] = playlist_colors[track_info["playlist"]]
+        colors[lowercase_palette][column] = map_to_color(normalized_value, palette)
+      colors[lowercase_palette]["playlist"] = playlist_colors[track_info["playlist"]]
     track_info["colors"] = colors
 
     incremented_playlist_info.append(track_info)
