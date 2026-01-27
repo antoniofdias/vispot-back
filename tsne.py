@@ -1,60 +1,115 @@
-import pandas
+import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.manifold import TSNE
-from matplotlib import colors
+from matplotlib import colors as mpl_colors
 import matplotlib.pyplot as plt
 
-COLUMNS_TO_SELECT = ["duration_ms", "danceability", "energy", "loudness", 
-                     "speechiness", "acousticness", "instrumentalness", 
-                     "liveness", "valence", "tempo"]
+COLUMNS_TO_SELECT = [
+    "duration_ms",
+    "danceability",
+    "energy",
+    "loudness",
+    "speechiness",
+    "acousticness",
+    "instrumentalness",
+    "liveness",
+    "valence",
+    "tempo",
+]
 
-PALETTE_ARRAY = ['viridis', 'cividis', 'jet', 'hot', 'plasma', 'copper']
+PALETTE_ARRAY = ["viridis", "cividis", "jet", "hot", "plasma", "copper"]
 
-tsne = TSNE(n_components=2, random_state=0)
 
 def increment_with_tsne_data(playlist_info):
-  incremented_playlist_info = []
-  color_array = ['#4CAF50', '#75485E', '#CB904D', '#255F85', '#FFCAE9']
-  playlist_colors = {}
+    if not playlist_info:
+        return []
 
-  playlist_dataframe = pandas.DataFrame.from_records(playlist_info)
-  playlist_dataframe = playlist_dataframe[COLUMNS_TO_SELECT]
+    df = pd.DataFrame.from_records(playlist_info)
+    df_features = df[COLUMNS_TO_SELECT]
 
-  scaler = StandardScaler()
+    n_samples = len(df_features)
 
-  standardized_data = scaler.fit_transform(playlist_dataframe)
-  standardized_dataframe = pandas.DataFrame(standardized_data, columns=playlist_dataframe.columns)
+    # Handle very small datasets safely
+    if n_samples < 3:
+        for idx, track in enumerate(playlist_info, start=1):
+            track["id"] = idx
+            track["x"] = 0.0
+            track["y"] = 0.0
+            track["colors"] = {}
+        return playlist_info
 
-  tsne_data = tsne.fit_transform(standardized_dataframe)
+    scaler = StandardScaler()
+    standardized_data = scaler.fit_transform(df_features)
 
-  for index, data in enumerate(tsne_data):
-    track_info = playlist_info[index]
-    track_info["x"] = float(data[0])
-    track_info["y"] = float(data[1])
+    perplexity = min(30, max(2, n_samples - 1))
 
-    if track_info["playlist"] not in playlist_colors:
-      playlist_colors[track_info["playlist"]] = color_array[0]
-      color_array.pop(0)
+    tsne = TSNE(
+        n_components=2,
+        random_state=0,
+        perplexity=perplexity,
+        init="random",
+    )
 
-    colors = {}
-    for palette in PALETTE_ARRAY:
-      colors[palette] = {} 
-      for column in COLUMNS_TO_SELECT:
-        min_val = playlist_dataframe[column].min()
-        max_val = playlist_dataframe[column].max()
-        normalized_value = (playlist_dataframe.at[index, column] - min_val) / (max_val - min_val)
-        colors[palette][column] = map_to_color(normalized_value, palette)
-      colors[palette]["playlist"] = playlist_colors[track_info["playlist"]]
-    track_info["colors"] = colors
+    tsne_data = tsne.fit_transform(standardized_data)
 
-    incremented_playlist_info.append(track_info)
+    # Precompute min/max per column
+    min_max = {
+        column: (df_features[column].min(), df_features[column].max())
+        for column in COLUMNS_TO_SELECT
+    }
 
-  return incremented_playlist_info
+    base_color_array = [
+        "#4CAF50",
+        "#75485E",
+        "#CB904D",
+        "#255F85",
+        "#FFCAE9",
+    ]
+
+    playlist_colors = {}
+
+    for index, point in enumerate(tsne_data):
+        track_info = playlist_info[index]
+
+        # ✅ Numeric ascending ID (1-based)
+        track_info["id"] = index + 1
+
+        track_info["x"] = float(point[0])
+        track_info["y"] = float(point[1])
+
+        playlist_name = track_info.get("playlist", "default")
+
+        if playlist_name not in playlist_colors:
+            playlist_colors[playlist_name] = base_color_array[
+                len(playlist_colors) % len(base_color_array)
+            ]
+
+        color_map = {}
+
+        for palette in PALETTE_ARRAY:
+            palette_colors = {}
+
+            for column in COLUMNS_TO_SELECT:
+                min_val, max_val = min_max[column]
+                value = df_features.at[index, column]
+
+                if max_val == min_val:
+                    normalized = 0.0
+                else:
+                    normalized = (value - min_val) / (max_val - min_val)
+
+                palette_colors[column] = map_to_color(normalized, palette)
+
+            palette_colors["playlist"] = playlist_colors[playlist_name]
+            color_map[palette] = palette_colors
+
+        track_info["colors"] = color_map
+
+    return playlist_info
+
 
 def map_to_color(value, palette):
-  norm = colors.Normalize(vmin=0, vmax=1)
-  cmap = plt.get_cmap(palette)
-  color = cmap(norm(value))
-  hex_code = colors.rgb2hex(color)
-
-  return hex_code
+    norm = mpl_colors.Normalize(vmin=0, vmax=1)
+    cmap = plt.get_cmap(palette)
+    rgba = cmap(norm(value))
+    return mpl_colors.rgb2hex(rgba)
