@@ -1,79 +1,98 @@
 import pandas as pd
+from pathlib import Path
 
-COLUMNS_TO_SELECT = [
-  "duration_ms", "danceability", "energy", "loudness",
-  "speechiness", "acousticness", "instrumentalness",
-  "liveness", "valence", "tempo"
+MOCKS_PATH = Path("mocks")
+
+CSV_FILES = [
+    "emo_playlist_dataset.csv",
+    "punks_playlist_dataset.csv",
+    "geeks_playlist_dataset.csv",
+    "queer_playlist_dataset.csv",
+    "hardcore_playlist_dataset.csv",
 ]
 
-def load_tracks_from_csv(path="mocks/emo_playlist_dataset.csv"):
-  df = pd.read_csv(path)
-
-  df = df.fillna("")
-
-  tracks = []
-
-  for _, row in df.iterrows():
-    track = {
-      "id": row.get("id"),
-      "name": row.get("name"),
-      "artist": row.get("artists_id"),
-      "playlist": row.get("playlist"),
-      "lyrics": str(row.get("lyrics", "")).lower(),
-      "duration_ms": row.get("duration_ms"),
-      "danceability": row.get("danceability"),
-      "energy": row.get("energy"),
-      "loudness": row.get("loudness"),
-      "speechiness": row.get("speechiness"),
-      "acousticness": row.get("acousticness"),
-      "instrumentalness": row.get("instrumentalness"),
-      "liveness": row.get("liveness"),
-      "valence": row.get("valence"),
-      "tempo": row.get("tempo"),
-    }
-
-    tracks.append(track)
-
-  return tracks
+_cached_tracks = None
 
 
-def get_playlist_name_from_csv(playlist_name):
-  return playlist_name
+def _load_all_csvs():
+    dataframes = []
+
+    for csv_file in CSV_FILES:
+        csv_path = MOCKS_PATH / csv_file
+
+        if not csv_path.exists():
+            raise FileNotFoundError(f"Mock CSV not found: {csv_path}")
+
+        df = pd.read_csv(csv_path)
+        dataframes.append(df)
+
+    merged_df = pd.concat(dataframes, ignore_index=True)
+    merged_df = merged_df.fillna("")
+
+    return merged_df
 
 
-def get_tracks_by_playlist(playlists, csv_path="mocks/emo_playlist_dataset.csv"):
-  df = pd.read_csv(csv_path)
+def load_tracks_from_csv():
+    """
+    Loads and caches all mocked tracks from all CSV files.
+    """
+    global _cached_tracks
 
-  if isinstance(playlists, str):
-    playlists = [playlists]
+    if _cached_tracks is not None:
+        return _cached_tracks
 
-  df = df[df["playlist"].isin(playlists)]
-  df = df.fillna("")
+    df = _load_all_csvs()
 
-  return load_tracks_from_dataframe(df)
+    tracks = []
+
+    for _, row in df.iterrows():
+        track = {
+            # NOTE: ID will be overridden later (tsne step)
+            "id": None,
+
+            "name": row.get("name"),
+            "artist": row.get("artists_name"),
+            "playlist": row.get("playlist"),
+            "lyrics": str(row.get("lyrics", "")).lower(),
+
+            # audio features
+            "duration_ms": row.get("duration_ms"),
+            "danceability": row.get("danceability"),
+            "energy": row.get("energy"),
+            "loudness": row.get("loudness"),
+            "speechiness": row.get("speechiness"),
+            "acousticness": row.get("acousticness"),
+            "instrumentalness": row.get("instrumentalness"),
+            "liveness": row.get("liveness"),
+            "valence": row.get("valence"),
+            "tempo": row.get("tempo"),
+        }
+
+        tracks.append(track)
+
+    _cached_tracks = tracks
+    return tracks
 
 
-def load_tracks_from_dataframe(df):
-  tracks = []
+def get_tracks_by_playlist(playlists):
+    """
+    Returns tracks filtered by one or more playlist names.
+    """
+    if isinstance(playlists, str):
+        playlists = [playlists]
 
-  for _, row in df.iterrows():
-    tracks.append({
-      "id": row["id"],
-      "name": row["name"],
-      "artist": row["artists_id"],
-      "playlist": row["playlist"],
-      "lyrics": str(row["lyrics"]).lower(),
+    playlists = set(playlists)
 
-      "duration_ms": row["duration_ms"],
-      "danceability": row["danceability"],
-      "energy": row["energy"],
-      "loudness": row["loudness"],
-      "speechiness": row["speechiness"],
-      "acousticness": row["acousticness"],
-      "instrumentalness": row["instrumentalness"],
-      "liveness": row["liveness"],
-      "valence": row["valence"],
-      "tempo": row["tempo"],
-    })
+    all_tracks = load_tracks_from_csv()
 
-  return tracks
+    return [
+        track for track in all_tracks
+        if track.get("playlist") in playlists
+    ]
+
+
+def get_playlist_name_from_csv(playlist):
+    """
+    Keeps API compatibility with the old Spotify-based endpoint.
+    """
+    return playlist
