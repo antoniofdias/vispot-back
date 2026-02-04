@@ -1,3 +1,7 @@
+import os
+import asyncio
+import pandas as pd
+
 from sanic import Sanic
 from sanic.response import json
 from sanic_ext import Extend
@@ -5,54 +9,105 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from spotify import get_playlist_name, get_playlist_info
 from tsne import increment_with_tsne_data
-from lyrics import request_lyrics_per_track
 from tfidf import calculate_correlation_matrix
 
 app = Sanic("tcc_api")
 app.config.CORS_ORIGINS = "*"
 Extend(app)
 
-@app.get("/playlist_name")
-async def playlist_name(request):
-  playlist_url = request.args.get("playlist_url")
-  playlist_name = get_playlist_name(playlist_url)
-  
-  return json({
-    "name": playlist_name,
-  })
+MOCK_FOLDER = "mocks"
+MOCK_FILES = {
+    "emo": "emo_playlist_dataset.csv",
+    "punk": "punks_playlist_dataset.csv",
+    "geek": "geeks_playlist_dataset.csv",
+    "queer": "queer_playlist_dataset.csv",
+    "hardcore": "hardcore_playlist_dataset.csv",
+}
 
-@app.get("/playlist")
-async def playlist_info(request):
-  playlist_urls = request.args.get("playlist_url")
-  playlist_url_array = playlist_urls.split("+")
 
-  tracks_info = []
-  current_index = 0
-  for playlist_url in playlist_url_array:
-    tracks_info += get_tracks_info(playlist_url, current_index)
-    current_index = len(tracks_info)
-  tracks_info = increment_with_tsne_data(tracks_info)
-  correlation_matrix = get_correlation_matrix(tracks_info)
-  
-  return json({
-    "songs": tracks_info,
-    "correlation": correlation_matrix
-  })
+def load_mock_playlists(playlists):
+    tracks = []
+    current_id = 1
 
-def get_tracks_info(playlist_url, current_index):
-  if playlist_url is None:
-    return json({})
+    for playlist in playlists:
+        playlist = playlist.lower()
 
-  tracks_info = get_playlist_info(playlist_url, current_index)
-  return tracks_info
+        if playlist not in MOCK_FILES:
+            continue
 
-def get_correlation_matrix(tracks_info):
-  lyrics = request_lyrics_per_track(tracks_info)
-  correlation_matrix = calculate_correlation_matrix(lyrics)
+        file_path = os.path.join(MOCK_FOLDER, MOCK_FILES[playlist])
 
-  return correlation_matrix
+        if not os.path.exists(file_path):
+            continue
 
-if __name__ == '__main__':
-  app.run(host='0.0.0.0', port=1337, workers=4)
+        df = pd.read_csv(file_path)
+
+        for _, row in df.iterrows():
+            track = {
+                "id": current_id,
+                "name": row.get("name", ""),
+                "artist": row.get("artists_name", ""),
+                "playlist": playlist,
+                "lyrics": row.get("lyrics", ""),
+
+                # Audio features used by TSNE
+                "duration_ms": row.get("duration_ms", 0),
+                "danceability": row.get("danceability", 0),
+                "energy": row.get("energy", 0),
+                "loudness": row.get("loudness", 0),
+                "speechiness": row.get("speechiness", 0),
+                "acousticness": row.get("acousticness", 0),
+                "instrumentalness": row.get("instrumentalness", 0),
+                "liveness": row.get("liveness", 0),
+                "valence": row.get("valence", 0),
+                "tempo": row.get("tempo", 0),
+            }
+
+            tracks.append(track)
+            current_id += 1
+
+    return tracks
+
+
+@app.get("/mock")
+async def mock_playlist(request):
+    playlists = request.args.getlist("playlist")
+
+    if not playlists:
+        return json({"songs": [], "correlation": []})
+
+    tracks_info = load_mock_playlists(playlists)
+
+    if not tracks_info:
+        return json({"songs": [], "correlation": []})
+
+    loop = asyncio.get_running_loop()
+
+    tracks_info = await loop.run_in_executor(
+        None,
+        increment_with_tsne_data,
+        tracks_info
+    )
+
+    lyrics = [track.get("lyrics", "") for track in tracks_info]
+
+    correlation = await loop.run_in_executor(
+        None,
+        calculate_correlation_matrix,
+        lyrics
+    )
+
+    return json({
+        "songs": tracks_info,
+        "correlation": correlation
+    })
+
+
+@app.get("/")
+async def health(_):
+    return json({"status": "ok"})
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=1337, workers=4)
